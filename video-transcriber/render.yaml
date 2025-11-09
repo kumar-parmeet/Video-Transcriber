@@ -1,0 +1,83 @@
+services:
+  - type: web
+    name: vt-api
+    env: docker
+    rootDir: apps/api
+    autoDeploy: true
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: PGHOST
+        value: ${PGHOST}
+      - key: PGPORT
+        value: ${PGPORT}
+      - key: PGUSER
+        value: ${PGUSER}
+      - key: PGPASSWORD
+        value: ${PGPASSWORD}
+      - key: PGDATABASE
+        value: ${PGDATABASE}
+      - key: REDIS_URL
+        value: ${REDIS_URL}
+      - key: REDIS_QUEUE_KEY
+        value: transcribe:jobs
+      - key: S3_ENDPOINT
+        value: ${S3_ENDPOINT}
+      - key: S3_BUCKET_MEDIA
+        value: media
+      - key: S3_BUCKET_OUTPUTS
+        value: outputs
+      - key: S3_ACCESS_KEY
+        value: ${S3_ACCESS_KEY}
+      - key: S3_SECRET_KEY
+        value: ${S3_SECRET_KEY}
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_FORCE_PATH_STYLE
+        value: 'true'
+      - key: API_PORT
+        value: '4000'
+      - key: API_UPLOAD_MAX_MB
+        value: '250'
+      - key: URL_ALLOWLIST
+        value: youtube.com,youtu.be,tiktok.com,instagram.com,facebook.com
+
+  - type: worker
+    name: vt-worker
+    env: docker
+    rootDir: apps/worker
+    autoDeploy: true
+    plan: free
+    envVars:
+      - key: PGHOST
+        value: ${PGHOST}
+      - key: PGPORT
+        value: ${PGPORT}
+      - key: PGUSER
+        value: ${PGUSER}
+      - key: PGPASSWORD
+        value: ${PGPASSWORD}
+      - key: PGDATABASE
+        value: ${PGDATABASE}
+      - key: REDIS_URL
+        value: ${REDIS_URL}
+      - key: REDIS_QUEUE_KEY
+        value: transcribe:jobs
+      - key: S3_ENDPOINT
+        value: ${S3_ENDPOINT}
+      - key: S3_BUCKET_MEDIA
+        value: media
+      - key: S3_BUCKET_OUTPUTS
+        value: outputs
+      - key: S3_ACCESS_KEY
+        value: ${S3_ACCESS_KEY}
+      - key: S3_SECRET_KEY
+        value: ${S3_SECRET_KEY}
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_FORCE_PATH_STYLE
+        value: 'true'
+      - key: WHISPER_ENGINE
+        value: faster-whisper
+      - key: WHISPER_MODEL
+        value: large-v3

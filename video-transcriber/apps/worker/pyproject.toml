@@ -1,0 +1,14 @@
+[project]
+name = "transcriber-worker"
+version = "0.1.0"
+dependencies = [
+  "redis>=5.0",
+  "psycopg[binary]>=3.2",
+  "boto3>=1.35",
+  "yt-dlp>=2024.10.7",
+  "ffmpeg-python>=0.2.0",
+  "faster-whisper>=1.0.3",
+  "pydantic>=2.8",
+]
+[tool.pytest.ini_options]
+pythonpath = ["src"]

@@ -1,0 +1,87 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transcriber
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  minio:
+    image: minio/minio:RELEASE.2025-01-11T06-25-04Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes:
+      - minio:/data
+
+  minio-setup:
+    image: minio/mc
+    depends_on: [minio]
+    entrypoint: ["/bin/sh","/scripts/setup.sh"]
+    volumes:
+      - ./infra/minio/setup.sh:/scripts/setup.sh:ro
+
+  api:
+    build: ./apps/api
+    environment:
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=transcriber
+      - REDIS_URL=redis://redis:6379
+      - REDIS_QUEUE_KEY=transcribe:jobs
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET_MEDIA=media
+      - S3_BUCKET_OUTPUTS=outputs
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_REGION=us-east-1
+      - S3_FORCE_PATH_STYLE=true
+      - API_PORT=4000
+      - API_UPLOAD_MAX_MB=250
+      - URL_ALLOWLIST=youtube.com,youtu.be,tiktok.com,vt.tiktok.com,instagram.com,facebook.com
+    ports: ["4000:4000"]
+    depends_on: [postgres, redis, minio, minio-setup]
+
+  worker:
+    build: ./apps/worker
+    environment:
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=transcriber
+      - REDIS_URL=redis://redis:6379
+      - REDIS_QUEUE_KEY=transcribe:jobs
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET_MEDIA=media
+      - S3_BUCKET_OUTPUTS=outputs
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_REGION=us-east-1
+      - S3_FORCE_PATH_STYLE=true
+      - WHISPER_ENGINE=faster-whisper
+      - WHISPER_MODEL=large-v3
+    depends_on: [postgres, redis, minio, minio-setup]
+
+  web:
+    build: ./apps/web
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:4000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  minio:
